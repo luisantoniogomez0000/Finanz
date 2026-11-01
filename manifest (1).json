@@ -1,0 +1,13 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "fullscreen",
+  "name": "FINANZ",
+  "orientation": "landscape",
+  "scope": "/",
+  "short_name": "FINANZ",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "lang": "es",
+  "id": "FNZ"
+}
