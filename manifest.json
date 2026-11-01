@@ -1,0 +1,20 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "fullscreen",
+  "name": "FINANZ",
+  "orientation": "landscape",
+  "scope": "/",
+  "short_name": "FINANZ",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "id": "FNZ"
+  "icons": [
+  {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+  }
+]
+}
