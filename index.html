@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestión de Finanzas Personales</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        input, button, select, textarea {
+            user-select: text;
+        }
+        .toast-enter {
+            animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        /* Touch animation for long-press */
+        .long-press-card {
+            touch-action: manipulation;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            transition: width 0.05s linear;
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 bg-slate-100 flex flex-col items-center justify-start antialiased selection:bg-emerald-500 selection:text-white">
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="fixed top-3 left-0 right-0 z-50 flex flex-col items-center px-4 pointer-events-none space-y-2"></div>
+
+    <!-- Main Mobile Container -->
+    <main class="w-full max-w-md min-h-screen bg-slate-100 shadow-xl flex flex-col relative pb-6 border-x border-slate-200">
+        
+        <!-- Header -->
+        <header class="bg-slate-50/95 backdrop-blur-md px-5 pt-5 pb-4 sticky top-0 z-30 border-b border-slate-200">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold shadow-md shadow-emerald-600/20">
+                        <i class="fa-solid fa-chart-line text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-bold tracking-tight leading-none text-slate-900">FINANZ</h1>
+                        <span class="text-[11px] text-slate-500 font-medium">gestión de finanzas</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Summary Cards Grid (Solid Colors with Pure White Text - Lighter Palette) -->
+            <div class="grid grid-cols-2 gap-2.5">
+                
+                <!-- 1. SALDO ACTUAL TOTAL (Verde Clarito) -->
+                <div class="bg-emerald-400 text-white border-none rounded-2xl p-3 flex flex-col justify-between shadow-md">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-white">Saldo Total</span>
+                        <div class="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-white text-xs">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <h2 id="cardSaldoTotal" class="text-xl font-extrabold text-white tracking-tight leading-none">
+                            $ 0.00
+                        </h2>
+                        <span class="text-[10px] text-white/85 mt-1 block font-medium">Ingresos menos Gastos</span>
+                    </div>
+                </div>
+
+                <!-- 2. DEUDAS (Rojo Clarito - Long Press 1.5s) -->
+                <div id="cardDeudas" class="long-press-card bg-red-400 text-white border-none rounded-2xl p-3 flex flex-col justify-between shadow-md cursor-pointer active:scale-[0.98] transition-transform">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-white">Deudas</span>
+                        <div class="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-white text-xs">
+                            <i class="fa-solid fa-hand-holding-dollar"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <h2 id="cardTotalDeudas" class="text-xl font-extrabold text-white tracking-tight leading-none">
+                            $ 0.00
+                        </h2>
+                        <span class="text-[10px] text-white/85 mt-1 block font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-stopwatch text-[9px]"></i> Mantén 1.5s abonar
+                        </span>
+                    </div>
+                    <!-- Long Press Visual Progress Bar -->
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-red-600/60">
+                        <div id="progressDeudas" class="h-full bg-white w-0 progress-bar-fill"></div>
+                    </div>
+                </div>
+
+                <!-- 3. CUENTAS POR COBRAR (Azul Clarito - Long Press 1.5s) -->
+                <div id="cardCobrar" class="long-press-card bg-blue-400 text-white border-none rounded-2xl p-3 flex flex-col justify-between shadow-md cursor-pointer active:scale-[0.98] transition-transform">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-white">Por Cobrar</span>
+                        <div class="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-white text-xs">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <h2 id="cardTotalCobrar" class="text-xl font-extrabold text-white tracking-tight leading-none">
+                            $ 0.00
+                        </h2>
+                        <span class="text-[10px] text-white/85 mt-1 block font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-stopwatch text-[9px]"></i> Mantén 1.5s cobrar
+                        </span>
+                    </div>
+                    <!-- Long Press Visual Progress Bar -->
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-blue-600/60">
+                        <div id="progressCobrar" class="h-full bg-white w-0 progress-bar-fill"></div>
+                    </div>
+                </div>
+
+                <!-- 4. GASTOS FIJOS (Naranja/Ámbar Clarito - Long Press 1.5s) -->
+                <div id="cardGastosFijos" class="long-press-card bg-amber-400 text-white border-none rounded-2xl p-3 flex flex-col justify-between shadow-md cursor-pointer active:scale-[0.98] transition-transform">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-white">Gastos Fijos</span>
+                        <div class="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-white text-xs">
+                            <i class="fa-solid fa-calendar-check"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <h2 id="cardTotalGastosFijos" class="text-xl font-extrabold text-white tracking-tight leading-none">
+                            $ 0.00
+                        </h2>
+                        <span class="text-[10px] text-white/85 mt-1 block font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-stopwatch text-[9px]"></i> Mantén 1.5s adelantar
+                        </span>
+                    </div>
+                    <!-- Long Press Visual Progress Bar -->
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-amber-600/60">
+                        <div id="progressGastosFijos" class="h-full bg-white w-0 progress-bar-fill"></div>
+                    </div>
+                </div>
+
+            </div>
+        </header>
+
+        <!-- Form Section -->
+        <section class="p-4 border-b border-slate-200 bg-white shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+                <h3 id="formTitle" class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-circle-plus text-emerald-500"></i> Nuevo Registro
+                </h3>
+                <span id="editingBadge" class="hidden text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full border border-amber-300">
+                    Modo Edición
+                </span>
+            </div>
+
+            <form id="recordForm" class="space-y-3" onsubmit="handleFormSubmit(event)">
+                <input type="hidden" id="recordId">
+                <input type="hidden" id="recordType" value="ingreso">
+                
+                <!-- Pestañas Individuales de Selección de Operación -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Tipo de Operación *</label>
+                    <div class="grid grid-cols-5 gap-1 bg-slate-200/70 p-1 rounded-xl border border-slate-300/60 shadow-inner">
+                        <button type="button" onclick="selectTab('ingreso')" id="tab-ingreso"
+                            class="tab-btn flex flex-col items-center justify-center py-2 px-1 rounded-lg text-[10px] font-bold transition-all bg-emerald-600 text-white shadow-sm">
+                            <i class="fa-solid fa-arrow-down text-xs mb-0.5"></i>
+                            <span class="truncate w-full text-center">Ingreso</span>
+                        </button>
+                        <button type="button" onclick="selectTab('gasto')" id="tab-gasto"
+                            class="tab-btn flex flex-col items-center justify-center py-2 px-1 rounded-lg text-[10px] font-bold transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+                            <i class="fa-solid fa-arrow-up text-xs mb-0.5"></i>
+                            <span class="truncate w-full text-center">Gasto</span>
+                        </button>
+                        <button type="button" onclick="selectTab('gasto_fijo')" id="tab-gasto_fijo"
+                            class="tab-btn flex flex-col items-center justify-center py-2 px-1 rounded-lg text-[10px] font-bold transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+                            <i class="fa-solid fa-calendar-check text-xs mb-0.5"></i>
+                            <span class="truncate w-full text-center">Fijo</span>
+                        </button>
+                        <button type="button" onclick="selectTab('deuda')" id="tab-deuda"
+                            class="tab-btn flex flex-col items-center justify-center py-2 px-1 rounded-lg text-[10px] font-bold transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+                            <i class="fa-solid fa-hand-holding-dollar text-xs mb-0.5"></i>
+                            <span class="truncate w-full text-center">Deuda</span>
+                        </button>
+                        <button type="button" onclick="selectTab('cobrar')" id="tab-cobrar"
+                            class="tab-btn flex flex-col items-center justify-center py-2 px-1 rounded-lg text-[10px] font-bold transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+                            <i class="fa-solid fa-file-invoice-dollar text-xs mb-0.5"></i>
+                            <span class="truncate w-full text-center">Cobrar</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5">
+                    <!-- Nombre / Concepto -->
+                    <div id="conceptNameContainer" class="col-span-2">
+                        <label for="conceptName" class="block text-xs font-semibold text-slate-600 mb-1">Concepto / Descripción *</label>
+                        <input type="text" id="conceptName" required maxlength="40" placeholder="Ej: Sueldo, Venta..." 
+                            class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-slate-800 placeholder:text-slate-400 shadow-sm">
+                    </div>
+
+                    <!-- Persona / Apellido / Detalle -->
+                    <div id="personDetailContainer" class="hidden">
+                        <label for="personDetail" class="block text-xs font-semibold text-slate-600 mb-1">Persona / Detalle</label>
+                        <input type="text" id="personDetail" maxlength="40" placeholder="Ej: Juan Pérez" 
+                            class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-slate-800 placeholder:text-slate-400 shadow-sm">
+                    </div>
+                </div>
+
+                <!-- Monto -->
+                <div>
+                    <label for="amount" class="block text-xs font-semibold text-slate-600 mb-1">Monto ($) *</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 font-bold text-xs">
+                            $
+                        </span>
+                        <input type="number" id="amount" step="0.01" min="0.01" max="99999999" required placeholder="0.00" 
+                            class="w-full pl-7 pr-3 py-2 text-sm font-semibold bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-slate-900 placeholder:text-slate-400 shadow-sm">
+                    </div>
+                </div>
+
+                <!-- Extra fields for Gasto Fijo -->
+                <div id="fixedExpenseFields" class="hidden grid grid-cols-2 gap-2.5 bg-orange-50 border border-orange-200 p-2.5 rounded-xl">
+                    <div>
+                        <label for="dueDate" class="block text-[11px] font-semibold text-orange-900 mb-1">Fecha de Corte *</label>
+                        <input type="date" id="dueDate" 
+                            class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 outline-none focus:ring-1 focus:ring-orange-500 shadow-sm">
+                    </div>
+                    <div>
+                        <label for="frequency" class="block text-[11px] font-semibold text-orange-900 mb-1">Frecuencia *</label>
+                        <select id="frequency" 
+                            class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 outline-none focus:ring-1 focus:ring-orange-500 shadow-sm">
+                            <option value="semanal">Semanal</option>
+                            <option value="mensual" selected>Mensual</option>
+                            <option value="anual">Anual</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-2 pt-1">
+                    <button type="submit" id="btnSubmit" 
+                        class="flex-1 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-semibold py-2.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-xs active:scale-[0.98]">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span id="btnSubmitText">Guardar Registro</span>
+                    </button>
+
+                    <button type="button" id="btnCancel" onclick="resetForm()" 
+                        class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2.5 px-3 rounded-xl transition-all items-center justify-center gap-1 text-xs active:scale-[0.98]">
+                        <i class="fa-solid fa-xmark"></i> Cancelar
+                    </button>
+                </div>
+        <!-- Records List Section -->
+        <section class="p-4 flex-1 flex flex-col min-h-0">
+            <!-- Tarjeta Contenedora Principal del Historial -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col flex-1 min-h-0">
+                <div class="flex items-center justify-between mb-3 gap-2 flex-shrink-0">
+                    <h3 class="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        Historial de Registros (<span id="listCounter">0</span>)
+                    </h3>
+                    
+                    <div class="relative w-1/2">
+                        <input type="text" id="searchInput" oninput="renderRecords()" placeholder="Buscar..." 
+                            class="w-full pl-7 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 shadow-sm">
+                        <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-slate-400 text-xs"></i>
+                    </div>
+                </div>
+
+                <!-- Filtros de Separación por Tipo de Transacción -->
+                <div class="flex items-center gap-1.5 overflow-x-auto pb-2.5 mb-3 custom-scrollbar text-xs flex-shrink-0">
+                    <button type="button" onclick="setRecordFilter('todos')" id="filter-todos"
+                        class="px-2.5 py-1 rounded-lg font-bold text-[11px] whitespace-nowrap transition-all bg-slate-800 text-white shadow-sm">
+                        Todos (<span id="count-todos">0</span>)
+                    </button>
+                    <button type="button" onclick="setRecordFilter('ingreso')" id="filter-ingreso"
+                        class="px-2.5 py-1 rounded-lg font-bold text-[11px] whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        Ingresos (<span id="count-ingreso">0</span>)
+                    </button>
+                    <button type="button" onclick="setRecordFilter('gasto')" id="filter-gasto"
+                        class="px-2.5 py-1 rounded-lg font-bold text-[11px] whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        Gastos (<span id="count-gasto">0</span>)
+                    </button>
+                    <button type="button" onclick="setRecordFilter('gasto_fijo')" id="filter-gasto_fijo"
+                        class="px-2.5 py-1 rounded-lg font-bold text-[11px] whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        Fijos (<span id="count-gasto_fijo">0</span>)
+                    </button>
+                    <button type="button" onclick="setRecordFilter('deuda')" id="filter-deuda"
+                        class="px-2.5 py-1 rounded-lg font-bold text-[11px] whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        Deudas (<span id="count-deuda">0</span>)
+                    </button>
+                    <button type="button" onclick="setRecordFilter('cobrar')" id="filter-cobrar"
+                        class="px-2.5 py-1 rounded-lg font-bold text-[11px] whitespace-nowrap transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        Por Cobrar (<span id="count-cobrar">0</span>)
+                    </button>
+                </div>
+
+                <!-- List Container estrictamente anidado con scroll independiente -->
+                <div id="recordsContainer" class="space-y-2 overflow-y-auto max-h-[360px] pr-1 custom-scrollbar flex-1">
+                    <!-- Records injected dynamically -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden py-8 flex flex-col items-center justify-center text-center">
+                    <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-2">
+                        <i class="fa-solid fa-folder-open text-xl"></i>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-600">No hay registros guardados</p>
+                    <p class="text-[11px] text-slate-400 max-w-[200px] mt-0.5">Ingresa datos en el formulario para comenzar.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Backup Tools Footer -->
+        <footer class="p-4 bg-slate-50 text-slate-800 mt-auto border-t border-slate-200">
+            <h4 class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                <i class="fa-solid fa-shield-halved text-emerald-600"></i> Copia de Seguridad JSON
+            </h4>
+            
+            <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="exportBackup()" 
+                    class="bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 border border-slate-300 font-medium py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-2 text-xs shadow-sm">
+                    <i class="fa-solid fa-download text-emerald-600"></i> Exportar JSON
+                </button>
+
+                <button type="button" onclick="triggerImport()" 
+                    class="bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 border border-slate-300 font-medium py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-2 text-xs shadow-sm">
+                    <i class="fa-solid fa-upload text-blue-600"></i> Importar JSON
+                </button>
+            </div>
+
+            <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="handleFileImport(event)">
+        </footer>
+    </main>
+
+    <!-- Modal 1: GASTO FIJO VENCIDO NOTIFICACIÓN AL ABRIR -->
+    <div id="fixedExpenseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white border border-orange-200 w-full max-w-xs rounded-2xl shadow-2xl p-5 relative text-slate-800">
+            <!-- Close Button (X) -->
+            <button onclick="closeFixedExpenseModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-700 text-base w-7 h-7 flex items-center justify-center rounded-full bg-slate-100">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="w-12 h-12 rounded-2xl bg-orange-100 text-orange-600 border border-orange-200 flex items-center justify-center mx-auto mb-3">
+                <i class="fa-solid fa-bell-concierge text-xl animate-bounce"></i>
+            </div>
+
+            <h3 class="text-sm font-bold text-slate-900 text-center uppercase tracking-wider">¡Gasto Fijo por Pagar!</h3>
+            <p class="text-[11px] text-slate-500 text-center mt-1">La fecha de corte de este gasto coincide o está vencida.</p>
+
+            <!-- Detail Card -->
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 my-4 space-y-1.5">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-slate-500 font-medium">Gasto:</span>
+                    <span id="feModalConcept" class="font-bold text-slate-800">---</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-slate-500 font-medium">Detalle:</span>
+                    <span id="feModalDetail" class="text-slate-600">---</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-slate-500 font-medium">Fecha Vencimiento:</span>
+                    <span id="feModalDate" class="text-orange-600 font-semibold">---</span>
+                </div>
+                <div class="flex justify-between items-center text-xs pt-1 border-t border-slate-200">
+                    <span class="text-slate-600 font-bold">Monto:</span>
+                    <span id="feModalAmount" class="text-base font-extrabold text-red-600">$ 0.00</span>
+                </div>
+            </div>
+
+            <!-- Action Red Button Pagar -->
+            <button type="button" onclick="payCurrentFixedExpense()" 
+                class="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 active:scale-[0.98]">
+                <i class="fa-solid fa-credit-card"></i> PAGAR
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal 2: BAJAR DEUDA (Long Press DEUDAS) -->
+    <div id="deudaModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white border border-red-200 w-full max-w-xs rounded-2xl shadow-2xl p-5 relative text-slate-800">
+            <button onclick="closeDeudaModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-700 text-base w-7 h-7 flex items-center justify-center rounded-full bg-slate-100">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="w-11 h-11 rounded-2xl bg-red-100 text-red-600 border border-red-200 flex items-center justify-center mx-auto mb-2">
+                <i class="fa-solid fa-hand-holding-dollar text-lg"></i>
+            </div>
+
+            <h3 class="text-sm font-bold text-slate-900 text-center uppercase tracking-wider">Abonar a Deuda</h3>
+            <p class="text-[11px] text-slate-500 text-center mt-0.5">Disminuye la deuda y regístralo como gasto del día.</p>
+
+            <div class="my-3 space-y-2.5">
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">Seleccionar Deuda</label>
+                    <select id="deudaSelect" onchange="updateDeudaSelectedMax()" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-800 outline-none">
+                        <!-- Injected -->
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">Monto a Abonar ($)</label>
+                    <input type="number" id="deudaPayAmount" step="0.01" min="0.01" placeholder="0.00" 
+                        class="w-full px-3 py-2 text-sm font-bold bg-slate-50 border border-slate-300 rounded-lg text-red-600 outline-none focus:ring-1 focus:ring-red-500">
+                </div>
+            </div>
+
+            <button type="button" onclick="executeBajarDeuda()" 
+                class="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-md shadow-red-600/30 flex items-center justify-center gap-2 active:scale-[0.98]">
+                <i class="fa-solid fa-minus-circle"></i> BAJAR DEUDA
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal 3: COBRO DE DEUDA (Long Press CUENTAS POR COBRAR) -->
+    <div id="cobroModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white border border-blue-200 w-full max-w-xs rounded-2xl shadow-2xl p-5 relative text-slate-800">
+            <button onclick="closeCobroModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-700 text-base w-7 h-7 flex items-center justify-center rounded-full bg-slate-100">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="w-11 h-11 rounded-2xl bg-blue-100 text-blue-600 border border-blue-200 flex items-center justify-center mx-auto mb-2">
+                <i class="fa-solid fa-file-invoice-dollar text-lg"></i>
+            </div>
+
+            <h3 class="text-sm font-bold text-slate-900 text-center uppercase tracking-wider">Cobro de Deuda</h3>
+            <p class="text-[11px] text-slate-500 text-center mt-0.5">Recibe el pago y regístralo como ingreso del día.</p>
+
+            <div class="my-3 space-y-2.5">
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">Seleccionar Cuenta por Cobrar</label>
+                    <select id="cobroSelect" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-800 outline-none">
+                        <!-- Injected -->
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">Monto a Cobrar ($)</label>
+                    <input type="number" id="cobroPayAmount" step="0.01" min="0.01" placeholder="0.00" 
+                        class="w-full px-3 py-2 text-sm font-bold bg-slate-50 border border-slate-300 rounded-lg text-blue-600 outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <button type="button" onclick="executeCobroDeuda()" 
+                class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/30 flex items-center justify-center gap-2 active:scale-[0.98]">
+                <i class="fa-solid fa-plus-circle"></i> COBRO DE DEUDA
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal 4: PAGAR GASTO FIJO ADELANTADO (Long Press GASTOS FIJOS) -->
+    <div id="adelantarFijoModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white border border-amber-200 w-full max-w-xs rounded-2xl shadow-2xl p-5 relative text-slate-800">
+            <button onclick="closeAdelantarFijoModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-700 text-base w-7 h-7 flex items-center justify-center rounded-full bg-slate-100">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="w-11 h-11 rounded-2xl bg-amber-100 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto mb-2">
+                <i class="fa-solid fa-calendar-check text-lg"></i>
+            </div>
+
+            <h3 class="text-sm font-bold text-slate-900 text-center uppercase tracking-wider">Pagar Adelantado</h3>
+            <p class="text-[11px] text-slate-500 text-center mt-0.5">Adelanta la cuota y amplía la fecha de corte.</p>
+
+            <div class="my-3 space-y-2.5">
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-600 mb-1">Seleccionar Gasto Fijo</label>
+                    <select id="adelantarFijoSelect" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-800 outline-none">
+                        <!-- Injected -->
+                    </select>
+                </div>
+            </div>
+
+            <button type="button" onclick="executeAdelantarGastoFijo()" 
+                class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-md shadow-amber-500/30 flex items-center justify-center gap-2 active:scale-[0.98]">
+                <i class="fa-solid fa-forward-fast"></i> PAGAR ADELANTADO
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Delete Confirmation -->
+    <div id="deleteModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white border border-slate-200 w-full max-w-xs rounded-2xl shadow-2xl p-5 text-center text-slate-800">
+            <div class="w-11 h-11 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-2">
+                <i class="fa-solid fa-trash-can text-lg"></i>
+            </div>
+            <h3 class="text-sm font-bold text-slate-900">¿Eliminar registro?</h3>
+            <p id="deleteModalMessage" class="text-xs text-slate-500 mt-1">Esta acción no se puede deshacer.</p>
+            
+            <div class="grid grid-cols-2 gap-2 mt-4">
+                <button type="button" onclick="closeDeleteModal()" 
+                    class="py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl">
+                    Cancelar
+                </button>
+                <button type="button" id="confirmDeleteBtn" 
+                    class="py-2 bg-red-600 hover:bg-red-500 text-white font-semibold text-xs rounded-xl">
+                    Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript App Engine -->
+    <script>
+        const STORAGE_KEY = 'app_finanzas_v2_data';
+
+        let records = [];
+        let itemToDeleteId = null;
+        let pendingFixedExpense = null;
+        let activeRecordFilter = 'todos';
+
+        // On DOM Loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set default date for fixed expense input to today
+            const todayStr = new Date().toISOString().slice(0, 10);
+            document.getElementById('dueDate').value = todayStr;
+
+            loadRecordsFromStorage();
+            renderRecords();
+            setupLongPressHandlers();
+            checkDueFixedExpensesOnLaunch();
+        });
+
+        // -------------------------------------------------------------
+        // FILTER SEPARATION BY TRANSACTION TYPE
+        // -------------------------------------------------------------
+        function setRecordFilter(filterType) {
+            activeRecordFilter = filterType;
+            
+            const filterTypes = ['todos', 'ingreso', 'gasto', 'gasto_fijo', 'deuda', 'cobrar'];
+            const activeClasses = {
+                'todos': ['bg-slate-800', 'text-white', 'shadow-sm'],
+                'ingreso': ['bg-emerald-600', 'text-white', 'shadow-sm'],
+                'gasto': ['bg-red-600', 'text-white', 'shadow-sm'],
+                'gasto_fijo': ['bg-amber-500', 'text-white', 'shadow-sm'],
+                'deuda': ['bg-red-700', 'text-white', 'shadow-sm'],
+                'cobrar': ['bg-blue-600', 'text-white', 'shadow-sm']
+            };
+
+            filterTypes.forEach(f => {
+                const btn = document.getElementById(`filter-${f}`);
+                if (!btn) return;
+                btn.classList.remove(
+                    'bg-slate-800', 'bg-emerald-600', 'bg-red-600', 'bg-amber-500', 
+                    'bg-red-700', 'bg-blue-600', 'text-white', 'shadow-sm'
+                );
+                btn.classList.add('bg-slate-100', 'text-slate-600', 'hover:bg-slate-200');
+            });
+
+            const activeBtn = document.getElementById(`filter-${filterType}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-100', 'text-slate-600', 'hover:bg-slate-200');
+                activeClasses[filterType].forEach(cls => activeBtn.classList.add(cls));
+                // Scroll the active filter button into view smoothly
+                activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+
+            renderRecords();
+        }
+
+        function updateFilterCounts() {
+            const counts = {
+                todos: records.length,
+                ingreso: 0,
+                gasto: 0,
+                gasto_fijo: 0,
+                deuda: 0,
+                cobrar: 0
+            };
+
+            records.forEach(r => {
+                if (counts[r.tipo] !== undefined) {
+                    counts[r.tipo]++;
+                }
+            });
+
+            document.getElementById('count-todos').textContent = counts.todos;
+            document.getElementById('count-ingreso').textContent = counts.ingreso;
+            document.getElementById('count-gasto').textContent = counts.gasto;
+            document.getElementById('count-gasto_fijo').textContent = counts.gasto_fijo;
+            document.getElementById('count-deuda').textContent = counts.deuda;
+            document.getElementById('count-cobrar').textContent = counts.cobrar;
+        }
+
+        function loadRecordsFromStorage() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                records = data ? JSON.parse(data) : [];
+            } catch (e) {
+                console.error("Error reading localStorage:", e);
+                records = [];
+            }
+        }
+
+        function saveRecordsToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+                updateCardSummaries();
+                return true;
+            } catch (e) {
+                console.error("Error writing localStorage:", e);
+                showToast("Error al guardar en el dispositivo", "danger");
+                return false;
+            }
+        }
+
+        function calculateSummaries() {
+            let saldoTotal = 0;
+            let totalDeudas = 0;
+            let totalCobrar = 0;
+            let totalGastosFijos = 0;
+
+            records.forEach(item => {
+                const monto = Number(item.monto) || 0;
+                if (item.tipo === 'ingreso') {
+                    saldoTotal += monto;
+                } else if (item.tipo === 'gasto') {
+                    saldoTotal -= monto;
+                } else if (item.tipo === 'deuda') {
+                    totalDeudas += monto;
+                } else if (item.tipo === 'cobrar') {
+                    totalCobrar += monto;
+                } else if (item.tipo === 'gasto_fijo') {
+                    totalGastosFijos += monto;
+                }
+            });
+
+            return { saldoTotal, totalDeudas, totalCobrar, totalGastosFijos };
+        }
+
+        function updateCardSummaries() {
+            const { saldoTotal, totalDeudas, totalCobrar, totalGastosFijos } = calculateSummaries();
+            
+            document.getElementById('cardSaldoTotal').textContent = `$ ${formatCurrency(saldoTotal)}`;
+            document.getElementById('cardTotalDeudas').textContent = `$ ${formatCurrency(totalDeudas)}`;
+            document.getElementById('cardTotalCobrar').textContent = `$ ${formatCurrency(totalCobrar)}`;
+            document.getElementById('cardTotalGastosFijos').textContent = `$ ${formatCurrency(totalGastosFijos)}`;
+        }
+
+        // -------------------------------------------------------------
+        // LONG PRESS EVENT HANDLERS (1.5 seconds = 1500ms)
+        // -------------------------------------------------------------
+        function setupLongPressHandlers() {
+            bindLongPress(
+                document.getElementById('cardDeudas'),
+                document.getElementById('progressDeudas'),
+                openDeudaModal
+            );
+
+            bindLongPress(
+                document.getElementById('cardCobrar'),
+                document.getElementById('progressCobrar'),
+                openCobroModal
+            );
+
+            bindLongPress(
+                document.getElementById('cardGastosFijos'),
+                document.getElementById('progressGastosFijos'),
+                openAdelantarFijoModal
+            );
+        }
+
+        function bindLongPress(cardEl, progressEl, callback) {
+            let timer = null;
+            let animFrame = null;
+            let startTime = 0;
+
+            const start = (e) => {
+                startTime = Date.now();
+                progressEl.style.width = '0%';
+                
+                timer = setTimeout(() => {
+                    progressEl.style.width = '100%';
+                    if (navigator.vibrate) navigator.vibrate(60);
+                    callback();
+                    cancel();
+                }, 1500);
+
+                const updateProgress = () => {
+                    if (!timer) return;
+                    const elapsed = Date.now() - startTime;
+                    const pct = Math.min(100, (elapsed / 1500) * 100);
+                    progressEl.style.width = pct + '%';
+                    if (elapsed < 1500) {
+                        animFrame = requestAnimationFrame(updateProgress);
+                    }
+                };
+                animFrame = requestAnimationFrame(updateProgress);
+            };
+
+            const cancel = () => {
+                if (timer) clearTimeout(timer);
+                if (animFrame) cancelAnimationFrame(animFrame);
+                timer = null;
+                progressEl.style.width = '0%';
+            };
+
+            cardEl.addEventListener('mousedown', start);
+            cardEl.addEventListener('touchstart', start, { passive: true });
+            cardEl.addEventListener('mouseup', cancel);
+            cardEl.addEventListener('mouseleave', cancel);
+            cardEl.addEventListener('touchend', cancel);
+            cardEl.addEventListener('touchcancel', cancel);
+        }
+
+        // -------------------------------------------------------------
+        // FIXED EXPENSE NOTIFICATION ON LAUNCH
+        // -------------------------------------------------------------
+        function checkDueFixedExpensesOnLaunch() {
+            const todayStr = new Date().toISOString().slice(0, 10);
+            
+            // Find fixed expenses due today or overdue
+            const dueItem = records.find(r => r.tipo === 'gasto_fijo' && r.fechaCorte && r.fechaCorte <= todayStr);
+            
+            if (dueItem) {
+                pendingFixedExpense = dueItem;
+                document.getElementById('feModalConcept').textContent = dueItem.nombre;
+                document.getElementById('feModalDetail').textContent = dueItem.apellido || 'Gasto Fijo Recurrente';
+                document.getElementById('feModalDate').textContent = formatDateStr(dueItem.fechaCorte);
+                document.getElementById('feModalAmount').textContent = `$ ${formatCurrency(dueItem.monto)}`;
+                
+                document.getElementById('fixedExpenseModal').classList.remove('hidden');
+            }
+        }
+
+        function closeFixedExpenseModal() {
+            document.getElementById('fixedExpenseModal').classList.add('hidden');
+            pendingFixedExpense = null;
+        }
+
+        function payCurrentFixedExpense() {
+            if (!pendingFixedExpense) return;
+
+            const item = pendingFixedExpense;
+            const now = new Date();
+            const todayStr = now.toISOString().slice(0, 10);
+
+            // 1. Register transaction Gasto for today
+            const expenseRecord = {
+                id: 'rec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                nombre: `Pago gasto fijo: ${item.nombre}`,
+                apellido: item.apellido || '',
+                monto: Number(item.monto),
+                tipo: 'gasto',
+                fechaCreacion: now.toISOString(),
+                fechaActualizacion: now.toISOString()
+            };
+            records.unshift(expenseRecord);
+
+            // 2. Advance due date of the fixed expense item according to frequency
+            const targetItem = records.find(r => r.id === item.id);
+            if (targetItem) {
+                const oldDate = new Date(targetItem.fechaCorte + 'T00:00:00');
+                if (targetItem.frecuencia === 'semanal') {
+                    oldDate.setDate(oldDate.getDate() + 7);
+                } else if (targetItem.frecuencia === 'anual') {
+                    oldDate.setFullYear(oldDate.getFullYear() + 1);
+                } else {
+                    // default mensual
+                    oldDate.setMonth(oldDate.getMonth() + 1);
+                }
+                targetItem.fechaCorte = oldDate.toISOString().slice(0, 10);
+                targetItem.fechaActualizacion = now.toISOString();
+            }
+
+            saveRecordsToStorage();
+            renderRecords();
+            closeFixedExpenseModal();
+            showToast("Gasto fijo pagado e ingresado como gasto del día.", "success");
+
+            // Check if there's another due fixed expense
+            setTimeout(checkDueFixedExpensesOnLaunch, 400);
+        }
+
+        // -------------------------------------------------------------
+        // DEUDAS MODAL & BAJAR DEUDA WORKFLOW
+        // -------------------------------------------------------------
+        function openDeudaModal() {
+            const deudas = records.filter(r => r.tipo === 'deuda' && r.monto > 0);
+            const selectEl = document.getElementById('deudaSelect');
+            
+            if (deudas.length === 0) {
+                showToast("No tienes deudas activas registradas.", "info");
+                return;
+            }
+
+            selectEl.innerHTML = deudas.map(d => `
+                <option value="${d.id}" data-monto="${d.monto}">
+                    ${escapeHtml(d.nombre)} (${escapeHtml(d.apellido || 'General')}) - $${formatCurrency(d.monto)}
+                </option>
+            `).join('');
+
+            updateDeudaSelectedMax();
+            document.getElementById('deudaModal').classList.remove('hidden');
+        }
+
+        function updateDeudaSelectedMax() {
+            const select = document.getElementById('deudaSelect');
+            const selectedOpt = select.options[select.selectedIndex];
+            if (selectedOpt) {
+                const maxAmount = selectedOpt.getAttribute('data-monto');
+                document.getElementById('deudaPayAmount').value = maxAmount;
+            }
+        }
+
+        function closeDeudaModal() {
+            document.getElementById('deudaModal').classList.add('hidden');
+        }
+
+        function executeBajarDeuda() {
+            const select = document.getElementById('deudaSelect');
+            const deudaId = select.value;
+            const payAmountInput = document.getElementById('deudaPayAmount').value;
+            const payAmount = parseFloat(payAmountInput);
+
+            if (isNaN(payAmount) || payAmount <= 0) {
+                showToast("Ingresa un monto válido a abonar.", "warning");
+                return;
+            }
+
+            const debtRecord = records.find(r => r.id === deudaId);
+            if (!debtRecord) return;
+
+            const now = new Date().toISOString();
+
+            // 1. Discount/reduce debt amount
+            debtRecord.monto = Math.max(0, Number((debtRecord.monto - payAmount).toFixed(2)));
+            debtRecord.fechaActualizacion = now;
+
+            // 2. Create automatic Gasto record: "Abono deuda por pagar"
+            const gastoRecord = {
+                id: 'rec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                nombre: "Abono deuda por pagar",
+                apellido: `${debtRecord.nombre} ${debtRecord.apellido || ''}`.trim(),
+                monto: Number(payAmount.toFixed(2)),
+                tipo: "gasto",
+                fechaCreacion: now,
+                fechaActualizacion: now
+            };
+            records.unshift(gastoRecord);
+
+            saveRecordsToStorage();
+            renderRecords();
+            closeDeudaModal();
+            showToast(`Abono de $${formatCurrency(payAmount)} registrado como gasto.`, "success");
+        }
+
+        // -------------------------------------------------------------
+        // COBRO DE DEUDA MODAL WORKFLOW
+        // -------------------------------------------------------------
+        function openCobroModal() {
+            const cobros = records.filter(r => r.tipo === 'cobrar' && r.monto > 0);
+            const selectEl = document.getElementById('cobroSelect');
+            
+            if (cobros.length === 0) {
+                showToast("No tienes cuentas por cobrar activas.", "info");
+                return;
+            }
+
+            selectEl.innerHTML = cobros.map(c => `
+                <option value="${c.id}" data-monto="${c.monto}">
+                    ${escapeHtml(c.nombre)} (${escapeHtml(c.apellido || 'Deudor')}) - $${formatCurrency(c.monto)}
+                </option>
+            `).join('');
+
+            const selectedOpt = selectEl.options[0];
+            if (selectedOpt) {
+                document.getElementById('cobroPayAmount').value = selectedOpt.getAttribute('data-monto');
+            }
+
+            document.getElementById('cobroModal').classList.remove('hidden');
+        }
+
+        function closeCobroModal() {
+            document.getElementById('cobroModal').classList.add('hidden');
+        }
+
+        function executeCobroDeuda() {
+            const select = document.getElementById('cobroSelect');
+            const cobroId = select.value;
+            const payAmountInput = document.getElementById('cobroPayAmount').value;
+            const payAmount = parseFloat(payAmountInput);
+
+            if (isNaN(payAmount) || payAmount <= 0) {
+                showToast("Ingresa un monto válido a cobrar.", "warning");
+                return;
+            }
+
+            const cobroRecord = records.find(r => r.id === cobroId);
+            if (!cobroRecord) return;
+
+            const now = new Date().toISOString();
+
+            // 1. Discount/reduce account receivable
+            cobroRecord.monto = Math.max(0, Number((cobroRecord.monto - payAmount).toFixed(2)));
+            cobroRecord.fechaActualizacion = now;
+
+            // 2. Create automatic Ingreso record: "Abono de cuentas por cobrar"
+            const ingresoRecord = {
+                id: 'rec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                nombre: "Abono de cuentas por cobrar",
+                apellido: `${cobroRecord.nombre} ${cobroRecord.apellido || ''}`.trim(),
+                monto: Number(payAmount.toFixed(2)),
+                tipo: "ingreso",
+                fechaCreacion: now,
+                fechaActualizacion: now
+            };
+            records.unshift(ingresoRecord);
+
+            saveRecordsToStorage();
+            renderRecords();
+            closeCobroModal();
+            showToast(`Cobro de $${formatCurrency(payAmount)} registrado como ingreso.`, "success");
+        }
+
+        // -------------------------------------------------------------
+        // PAGAR GASTO FIJO ADELANTADO WORKFLOW
+        // -------------------------------------------------------------
+        function openAdelantarFijoModal() {
+            const fijos = records.filter(r => r.tipo === 'gasto_fijo');
+            const selectEl = document.getElementById('adelantarFijoSelect');
+            
+            if (fijos.length === 0) {
+                showToast("No tienes gastos fijos registrados.", "info");
+                return;
+            }
+
+            selectEl.innerHTML = fijos.map(f => `
+                <option value="${f.id}">
+                    ${escapeHtml(f.nombre)} ($${formatCurrency(f.monto)}) - Corte: ${formatDateStr(f.fechaCorte)} (${f.frecuencia || 'mensual'})
+                </option>
+            `).join('');
+
+            document.getElementById('adelantarFijoModal').classList.remove('hidden');
+        }
+
+        function closeAdelantarFijoModal() {
+            document.getElementById('adelantarFijoModal').classList.add('hidden');
+        }
+
+        function executeAdelantarGastoFijo() {
+            const select = document.getElementById('adelantarFijoSelect');
+            const fijoId = select.value;
+            const fijoRecord = records.find(r => r.id === fijoId);
+
+            if (!fijoRecord) return;
+
+            const now = new Date();
+            const nowIso = now.toISOString();
+
+            // 1. Create automatic Gasto record: "Pago adelantado: [Nombre]"
+            const gastoRecord = {
+                id: 'rec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                nombre: `Pago adelantado: ${fijoRecord.nombre}`,
+                apellido: fijoRecord.apellido || '',
+                monto: Number(fijoRecord.monto),
+                tipo: 'gasto',
+                fechaCreacion: nowIso,
+                fechaActualizacion: nowIso
+            };
+            records.unshift(gastoRecord);
+
+            // 2. Advance due date of fixed expense according to frequency
+            const oldDate = new Date((fijoRecord.fechaCorte || nowIso.slice(0, 10)) + 'T00:00:00');
+            if (fijoRecord.frecuencia === 'semanal') {
+                oldDate.setDate(oldDate.getDate() + 7);
+            } else if (fijoRecord.frecuencia === 'anual') {
+                oldDate.setFullYear(oldDate.getFullYear() + 1);
+            } else {
+                // default mensual
+                oldDate.setMonth(oldDate.getMonth() + 1);
+            }
+            fijoRecord.fechaCorte = oldDate.toISOString().slice(0, 10);
+            fijoRecord.fechaActualizacion = nowIso;
+
+            saveRecordsToStorage();
+            renderRecords();
+            closeAdelantarFijoModal();
+            showToast(`Pago adelantado de $${formatCurrency(fijoRecord.monto)} registrado.`, "success");
+        }
+
+        // -------------------------------------------------------------
+        // FORM MANIPULATION & CRUD
+        // -------------------------------------------------------------
+        let currentActiveTab = 'ingreso';
+
+        function selectTab(type) {
+            currentActiveTab = type;
+            document.getElementById('recordType').value = type;
+
+            const tabs = ['ingreso', 'gasto', 'gasto_fijo', 'deuda', 'cobrar'];
+            const activeClasses = {
+                'ingreso': ['bg-emerald-600', 'text-white', 'shadow-sm'],
+                'gasto': ['bg-red-600', 'text-white', 'shadow-sm'],
+                'gasto_fijo': ['bg-amber-500', 'text-white', 'shadow-sm'],
+                'deuda': ['bg-red-700', 'text-white', 'shadow-sm'],
+                'cobrar': ['bg-blue-600', 'text-white', 'shadow-sm']
+            };
+
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if (!btn) return;
+                btn.classList.remove(
+                    'bg-emerald-600', 'bg-red-600', 'bg-amber-500', 'bg-red-700', 'bg-blue-600', 
+                    'text-white', 'shadow-sm'
+                );
+                btn.classList.add('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-200');
+            });
+
+            const activeBtn = document.getElementById(`tab-${type}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-200');
+                activeClasses[type].forEach(cls => activeBtn.classList.add(cls));
+            }
+
+            updateSubmitButtonColor(type);
+            toggleFieldVisibility();
+
+            // Sincronizar automáticamente el filtro del historial con el tipo seleccionado
+            setRecordFilter(type);
+        }
+
+        function updateSubmitButtonColor(type) {
+            const btn = document.getElementById('btnSubmit');
+            if (!btn) return;
+
+            const allColorClasses = [
+                'bg-emerald-600', 'bg-emerald-500', 'hover:bg-emerald-500', 'hover:bg-emerald-400', 'active:bg-emerald-700', 'active:bg-emerald-600',
+                'bg-red-600', 'bg-red-500', 'hover:bg-red-500', 'hover:bg-red-400', 'active:bg-red-700', 'active:bg-red-600',
+                'bg-amber-500', 'hover:bg-amber-400', 'active:bg-amber-600',
+                'bg-blue-600', 'bg-blue-500', 'hover:bg-blue-500', 'hover:bg-blue-400', 'active:bg-blue-700', 'active:bg-blue-600'
+            ];
+            btn.classList.remove(...allColorClasses);
+
+            const colors = {
+                'ingreso': ['bg-emerald-500', 'hover:bg-emerald-400', 'active:bg-emerald-600'],
+                'gasto': ['bg-red-500', 'hover:bg-red-400', 'active:bg-red-600'],
+                'gasto_fijo': ['bg-amber-500', 'hover:bg-amber-400', 'active:bg-amber-600'],
+                'deuda': ['bg-red-500', 'hover:bg-red-400', 'active:bg-red-600'],
+                'cobrar': ['bg-blue-500', 'hover:bg-blue-400', 'active:bg-blue-600']
+            };
+
+            const newClasses = colors[type] || colors['ingreso'];
+            btn.classList.add(...newClasses);
+        }
+
+        function toggleFieldVisibility() {
+            const type = document.getElementById('recordType').value;
+            const fixedContainer = document.getElementById('fixedExpenseFields');
+            const personDetailContainer = document.getElementById('personDetailContainer');
+            const conceptNameContainer = document.getElementById('conceptNameContainer');
+
+            // Visibilidad de campos de gasto fijo
+            if (type === 'gasto_fijo') {
+                fixedContainer.classList.remove('hidden');
+            } else {
+                fixedContainer.classList.add('hidden');
+            }
+
+            // Visibilidad del campo "Persona / Detalle"
+            if (type === 'deuda' || type === 'cobrar') {
+                personDetailContainer.classList.remove('hidden');
+                conceptNameContainer.classList.remove('col-span-2');
+            } else {
+                personDetailContainer.classList.add('hidden');
+                conceptNameContainer.classList.add('col-span-2');
+            }
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const recordId = document.getElementById('recordId').value;
+            const tipo = document.getElementById('recordType').value;
+            const nombre = document.getElementById('conceptName').value.trim();
+            const apellido = document.getElementById('personDetail').value.trim();
+            const amountInput = document.getElementById('amount').value;
+            const monto = parseFloat(amountInput);
+
+            if (!nombre || isNaN(monto) || monto <= 0) {
+                showToast("Por favor ingresa un concepto y monto válidos.", "warning");
+                return;
+            }
+
+            const now = new Date().toISOString();
+
+            let extraProps = {};
+            if (tipo === 'gasto_fijo') {
+                const dueDate = document.getElementById('dueDate').value;
+                const frequency = document.getElementById('frequency').value;
+                if (!dueDate) {
+                    showToast("Por favor selecciona una fecha de corte.", "warning");
+                    return;
+                }
+                extraProps = { fechaCorte: dueDate, frecuencia: frequency };
+            }
+
+            if (recordId) {
+                // Edit existing
+                const idx = records.findIndex(r => r.id === recordId);
+                if (idx !== -1) {
+                    records[idx] = {
+                        ...records[idx],
+                        tipo,
+                        nombre,
+                        apellido,
+                        monto: Number(monto.toFixed(2)),
+                        ...extraProps,
+                        fechaActualizacion: now
+                    };
+                    showToast("Registro actualizado.", "success");
+                }
+            } else {
+                // New record
+                const newRec = {
+                    id: 'rec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                    tipo,
+                    nombre,
+                    apellido,
+                    monto: Number(monto.toFixed(2)),
+                    ...extraProps,
+                    fechaCreacion: now,
+                    fechaActualizacion: now
+                };
+                records.unshift(newRec);
+                showToast("Nuevo registro guardado.", "success");
+            }
+
+            saveRecordsToStorage();
+            resetForm(true);
+            renderRecords();
+        }
+
+        function editRecord(id) {
+            const item = records.find(r => r.id === id);
+            if (!item) return;
+
+            document.getElementById('recordId').value = item.id;
+            selectTab(item.tipo);
+            document.getElementById('conceptName').value = item.nombre;
+            document.getElementById('personDetail').value = item.apellido || '';
+            document.getElementById('amount').value = item.monto;
+
+            if (item.tipo === 'gasto_fijo') {
+                if (item.fechaCorte) document.getElementById('dueDate').value = item.fechaCorte;
+                if (item.frecuencia) document.getElementById('frequency').value = item.frecuencia;
+            }
+
+            // Form Edit UI
+            document.getElementById('formTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-amber-600"></i> Editar Registro`;
+            document.getElementById('btnSubmitText').textContent = "Actualizar Registro";
+            document.getElementById('btnCancel').classList.remove('hidden');
+            document.getElementById('editingBadge').classList.remove('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm(keepTab = true) {
+            const tabToKeep = keepTab ? currentActiveTab : 'ingreso';
+            document.getElementById('recordForm').reset();
+            document.getElementById('recordId').value = '';
+            selectTab(tabToKeep);
+
+            const todayStr = new Date().toISOString().slice(0, 10);
+            document.getElementById('dueDate').value = todayStr;
+
+            document.getElementById('formTitle').innerHTML = `<i class="fa-solid fa-circle-plus text-emerald-600"></i> Nuevo Registro`;
+            document.getElementById('btnSubmitText').textContent = "Guardar Registro";
+            document.getElementById('btnCancel').classList.add('hidden');
+            document.getElementById('editingBadge').classList.add('hidden');
+        }
+
+        function promptDelete(id) {
+            itemToDeleteId = id;
+            document.getElementById('deleteModal').classList.remove('hidden');
+            document.getElementById('confirmDeleteBtn').onclick = confirmDelete;
+        }
+
+        function closeDeleteModal() {
+            itemToDeleteId = null;
+            document.getElementById('deleteModal').classList.add('hidden');
+        }
+
+        function confirmDelete() {
+            if (!itemToDeleteId) return;
+            records = records.filter(r => r.id !== itemToDeleteId);
+            saveRecordsToStorage();
+            closeDeleteModal();
+            renderRecords();
+            showToast("Registro eliminado.", "info");
+        }
+
+        // -------------------------------------------------------------
+        // LIST RENDERING & BADGES
+        // -------------------------------------------------------------
+        function renderRecords() {
+            updateFilterCounts();
+
+            const container = document.getElementById('recordsContainer') || document.getElementById('recordsList');
+            const emptyState = document.getElementById('emptyState');
+            const query = (document.getElementById('searchInput').value || '').toLowerCase();
+
+            // First filter by active category tab, then by search query
+            const filtered = records.filter(r => {
+                const matchesCategory = (activeRecordFilter === 'todos') || (r.tipo === activeRecordFilter);
+                const searchStr = `${r.nombre} ${r.apellido || ''} ${r.monto} ${r.tipo}`.toLowerCase();
+                const matchesSearch = searchStr.includes(query);
+                return matchesCategory && matchesSearch;
+            });
+
+            document.getElementById('listCounter').textContent = filtered.length;
+
+            if (records.length === 0) {
+                if (container) container.innerHTML = '';
+                if (emptyState) emptyState.classList.remove('hidden');
+                updateCardSummaries();
+                return;
+            }
+
+            if (emptyState) emptyState.classList.add('hidden');
+
+            if (filtered.length === 0) {
+                if (container) container.innerHTML = `<div class="py-6 text-center text-slate-400 text-xs">Sin registros en esta categoría</div>`;
+                updateCardSummaries();
+                return;
+            }
+
+            if (container) {
+                container.innerHTML = filtered.map(item => {
+                    const badge = getTypeBadge(item);
+                    const isZero = item.monto === 0;
+
+                    return `
+                        <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-sm flex items-center justify-between gap-2 hover:border-slate-300 transition-all">
+                            <div class="flex items-center gap-2.5 overflow-hidden">
+                                <div class="w-9 h-9 rounded-lg flex-shrink-0 flex items-center justify-center font-bold text-xs ${badge.iconBg} ${badge.iconColor}">
+                                    <i class="fa-solid ${badge.icon}"></i>
+                                </div>
+                                <div class="truncate">
+                                    <div class="flex items-center gap-1.5">
+                                        <h4 class="text-xs font-bold text-slate-800 truncate ${isZero ? 'line-through text-slate-400' : ''}">
+                                            ${escapeHtml(item.nombre)}
+                                        </h4>
+                                        <span class="text-[9px] px-1.5 py-0.2 font-semibold rounded ${badge.tagBg} ${badge.tagColor}">
+                                            ${badge.label}
+                                        </span>
+                                    </div>
+                                    <span class="text-[10px] text-slate-500 block truncate mt-0.5">
+                                        ${item.apellido ? escapeHtml(item.apellido) + ' • ' : ''}${formatDateStr(item.fechaCreacion)}
+                                        ${item.fechaCorte ? ' • Corte: ' + formatDateStr(item.fechaCorte) : ''}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-extrabold ${badge.amountColor} ${isZero ? 'opacity-40' : ''}">
+                                    $${formatCurrency(item.monto)}
+                                </span>
+                                <div class="flex items-center border-l border-slate-200 pl-1.5 gap-0.5">
+                                    <button type="button" onclick="editRecord('${item.id}')" title="Editar"
+                                        class="w-7 h-7 text-slate-400 hover:text-amber-600 flex items-center justify-center transition-colors">
+                                        <i class="fa-solid fa-pen text-[11px]"></i>
+                                    </button>
+                                    <button type="button" onclick="promptDelete('${item.id}')" title="Eliminar"
+                                        class="w-7 h-7 text-slate-400 hover:text-red-600 flex items-center justify-center transition-colors">
+                                        <i class="fa-solid fa-trash-can text-[11px]"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            updateCardSummaries();
+        }
+
+        function getTypeBadge(item) {
+            switch (item.tipo) {
+                case 'ingreso':
+                    return {
+                        label: 'Ingreso',
+                        icon: 'fa-arrow-down',
+                        iconBg: 'bg-emerald-100',
+                        iconColor: 'text-emerald-700',
+                        tagBg: 'bg-emerald-50',
+                        tagColor: 'text-emerald-700',
+                        amountColor: 'text-emerald-600'
+                    };
+                case 'gasto':
+                    return {
+                        label: 'Gasto',
+                        icon: 'fa-arrow-up',
+                        iconBg: 'bg-red-100',
+                        iconColor: 'text-red-700',
+                        tagBg: 'bg-red-50',
+                        tagColor: 'text-red-700',
+                        amountColor: 'text-red-600'
+                    };
+                case 'deuda':
+                    return {
+                        label: 'Deuda',
+                        icon: 'fa-hand-holding-dollar',
+                        iconBg: 'bg-red-100',
+                        iconColor: 'text-red-700',
+                        tagBg: 'bg-red-50',
+                        tagColor: 'text-red-700',
+                        amountColor: 'text-red-600'
+                    };
+                case 'cobrar':
+                    return {
+                        label: 'Por Cobrar',
+                        icon: 'fa-file-invoice-dollar',
+                        iconBg: 'bg-blue-100',
+                        iconColor: 'text-blue-700',
+                        tagBg: 'bg-blue-50',
+                        tagColor: 'text-blue-700',
+                        amountColor: 'text-blue-600'
+                    };
+                case 'gasto_fijo':
+                    return {
+                        label: 'Gasto Fijo',
+                        icon: 'fa-calendar-check',
+                        iconBg: 'bg-orange-100',
+                        iconColor: 'text-orange-700',
+                        tagBg: 'bg-orange-50',
+                        tagColor: 'text-orange-700',
+                        amountColor: 'text-orange-600'
+                    };
+                default:
+                    return {
+                        label: 'Registro',
+                        icon: 'fa-circle-info',
+                        iconBg: 'bg-slate-200',
+                        iconColor: 'text-slate-700',
+                        tagBg: 'bg-slate-100',
+                        tagColor: 'text-slate-700',
+                        amountColor: 'text-slate-900'
+                    };
+            }
+        }
+
+        // -------------------------------------------------------------
+        // EXPORT & IMPORT BACKUP SYSTEM
+        // -------------------------------------------------------------
+        function exportBackup() {
+            if (records.length === 0) {
+                showToast("No hay información para exportar.", "warning");
+                return;
+            }
+
+            try {
+                const dataStr = JSON.stringify(records, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup_finanzas_${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast("Copia de seguridad descargada.", "success");
+            } catch (e) {
+                showToast("Error al generar copia de seguridad.", "danger");
+            }
+        }
+
+        function triggerImport() {
+            document.getElementById('importFileInput').click();
+        }
+
+        function handleFileImport(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const parsed = JSON.parse(event.target.result);
+                    if (!Array.isArray(parsed)) throw new Error("JSON debe ser una lista.");
+
+                    records = parsed;
+                    saveRecordsToStorage();
+                    renderRecords();
+                    showToast("Copia de seguridad restaurada.", "success");
+                } catch (err) {
+                    showToast("Archivo JSON no válido o corrupto.", "danger");
+                } finally {
+                    e.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // -------------------------------------------------------------
+        // UTILITY FUNCTIONS
+        // -------------------------------------------------------------
+        function formatCurrency(num) {
+            return Number(num || 0).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatDateStr(isoStr) {
+            if (!isoStr) return '';
+            try {
+                const parts = isoStr.split('T')[0].split('-');
+                if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                return isoStr;
+            } catch (e) {
+                return isoStr;
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let bgClass = "bg-white text-slate-800 border-slate-300";
+            let iconClass = "fa-circle-info text-blue-600";
+
+            if (type === 'success') {
+                bgClass = "bg-emerald-50 text-emerald-900 border-emerald-300";
+                iconClass = "fa-circle-check text-emerald-600";
+            } else if (type === 'danger') {
+                bgClass = "bg-red-50 text-red-900 border-red-300";
+                iconClass = "fa-circle-xmark text-red-600";
+            } else if (type === 'warning') {
+                bgClass = "bg-amber-50 text-amber-900 border-amber-300";
+                iconClass = "fa-triangle-exclamation text-amber-600";
+            }
+
+            toast.className = `${bgClass} border backdrop-blur-md px-3.5 py-2 rounded-xl shadow-lg text-xs font-semibold flex items-center gap-2 pointer-events-auto toast-enter`;
+            toast.innerHTML = `<i class="fa-solid ${iconClass}"></i> <span>${escapeHtml(message)}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
