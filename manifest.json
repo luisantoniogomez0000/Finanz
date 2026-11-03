@@ -1,11 +1,25 @@
 {
-  "background_color": "#ff8200",
-  "dir": "ltr",
-  "display": "standalone",
   "name": "FINANZ",
-  "orientation": "any",
-  "scope": "/",
   "short_name": "FINANZ",
-  "start_url": "/",
-  "theme_color": "#ff6900"
+  "description": "Aplicación de gestión y control de finanzas",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
