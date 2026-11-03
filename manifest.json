@@ -1,0 +1,11 @@
+{
+  "background_color": "#ff8200",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "FINANZ",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "FINANZ",
+  "start_url": "/",
+  "theme_color": "#ff6900"
+}
